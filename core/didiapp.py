@@ -1,9 +1,51 @@
 from dingtalkchatbot.chatbot import DingtalkChatbot, ActionCard, CardItem
 import requests,urllib3
 urllib3.disable_warnings()
+import time,re
+
+time_re_str = '\d{1,2}:\d{1,2}:\d{1,2}-\d{1,2}:\d{1,2}:\d{1,2}'
+time_re = re.compile(time_re_str)
 
 class Employee:
-    pass
+    def __init__(self,task,link,level,code_info):
+        self.task = task
+        self.link = link
+        self.level = level
+        self.code_info = code_info
+        boy_time = time_re.search(self.task)[0]
+        print(f"time is {boy_time}")
+        boy_time_bool = deal_time(boy_time)  # 是否时间区间内 再设计一套结束前10分钟的
+
+
+def deal_time(today_task_time):
+    today_year = time.strftime("%Y-%m-%d", time.localtime())
+    now_timestamp = int(time.time())
+    if len(today_task_time.split("-")) < 2:
+        return False
+    start_time = today_year + " " + today_task_time.split("-")[0]
+    end_time = today_year + " " + today_task_time.split("-")[1]
+
+    if start_time[-8] == '2' and start_time[-7] == '4':  # 只有24点的这个情况需要处理
+        start_time = today_year + " " + "23:59:00"
+    if end_time[-8] == '2' and end_time[-7] == '4':
+        end_time = today_year + " " + "23:59:00"
+
+    start_time_array = time.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+    start_time_stamp = int(time.mktime(start_time_array))
+    print(f"start time {start_time_stamp}")
+
+    end_time_array = time.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+    end_time_stamp = int(time.mktime(end_time_array))
+    print(f"end time {end_time_stamp}")
+
+    if start_time_stamp < now_timestamp < end_time_stamp:
+        print("在时间区间内")
+        return True
+    else:
+        print("不在时间区间内")
+        return False
+
+
 
 def get_didiapp_info(api, token):
     burp0_url = api
@@ -14,7 +56,7 @@ def get_didiapp_info(api, token):
                      "Accept-Encoding": "gzip, deflate", "Connection": "close", "Upgrade-Insecure-Requests": "1",
                      "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none",
                      "Sec-Fetch-User": "?1", "Pragma": "no-cache", "Cache-Control": "no-cache"}
-    r = requests.get(burp0_url, headers=burp0_headers,verify=False)
+    r = requests.get(burp0_url, headers=burp0_headers,verify=False) #,proxies={"https": "http://127.0.0.1:8080"}
     reponse_json = ""
     if r.status_code == 200:
         reponse_json = r.json()
